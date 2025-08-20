@@ -227,7 +227,6 @@
                         <textarea id="catatan" rows="3" class="input-styled mt-1 block w-full"></textarea>
                     </div>
                 </div>
-                <p id="form-error" class="text-red-500 text-sm text-center" style="display: none;"></p>
                 <div class="flex items-center justify-between pt-4">
                     <button type="button" id="cancel-form-btn" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 font-semibold transition">Batal</button>
                     <button type="submit" class="px-8 py-2 text-white rounded-lg font-semibold btn-gradient">Simpan</button>
@@ -279,7 +278,6 @@
             <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
                 <h3 class="text-lg font-bold">Hapus Pesanan?</h3>
                 <p class="text-slate-600 my-4">Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat diurungkan.</p>
-                <p id="delete-error" class="text-red-500 text-sm text-center" style="display: none;"></p>
                 <div class="flex justify-end gap-4">
                     <button id="cancel-delete-btn" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Batal</button>
                     <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Hapus</button>
@@ -289,56 +287,9 @@
 
     </div>
 
-    <script type="module">
-        // Import fungsi-fungsi yang diperlukan dari Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ===== Konfigurasi dan Inisialisasi Firebase =====
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-orderly-app';
-        
-        let app, auth, db;
-        let userId = null;
-        let ordersCollectionRef = null;
-        let unsubscribe = null;
+    <script>
+        // ===== Variabel Global =====
         let allOrders = [];
-
-        function initializeAppLogic() {
-            if (!app) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        console.log("User is signed in with uid:", user.uid);
-                        userId = user.uid;
-                        ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
-                        listenToOrders();
-                    } else {
-                        console.log("User is signed out.");
-                        userId = null;
-                        if (unsubscribe) unsubscribe();
-                    }
-                });
-            }
-            authenticateUser();
-        }
-
-        async function authenticateUser() {
-            try {
-                if (auth.currentUser) return;
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Authentication failed:", error);
-            }
-        }
 
         // ===== Manajemen Tampilan (Navigasi Halaman) =====
         const pages = document.querySelectorAll('.page');
@@ -350,6 +301,17 @@
             });
             const isAppPage = pageId.includes('dashboard') || pageId.includes('all-orders') || pageId.includes('form');
             fab.style.display = (isAppPage && pageId !== 'form-page') ? 'flex' : 'none';
+        }
+
+        // ===== Logika Penyimpanan Lokal =====
+        function saveOrdersToLocal() {
+            localStorage.setItem('myOrders', JSON.stringify(allOrders));
+        }
+
+        function loadOrdersFromLocal() {
+            const ordersJSON = localStorage.getItem('myOrders');
+            allOrders = ordersJSON ? JSON.parse(ordersJSON) : [];
+            renderOrders(allOrders);
         }
 
         // ===== Logika Render Tampilan =====
@@ -433,33 +395,10 @@
             return div;
         }
 
-        // ===== Listener Firestore Real-time =====
-        function listenToOrders() {
-            if (unsubscribe) unsubscribe();
-            if (!ordersCollectionRef) return;
-
-            unsubscribe = onSnapshot(ordersCollectionRef, (snapshot) => {
-                const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                orders.sort((a, b) => new Date(b.tanggalPesan) - new Date(a.tanggalPesan));
-                renderOrders(orders);
-            }, (error) => {
-                console.error("Error listening to orders:", error);
-            });
-        }
-
         // ===== Operasi CRUD (Create, Read, Update, Delete) =====
         const orderForm = document.getElementById('order-form');
-        orderForm.addEventListener('submit', async (e) => {
+        orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const formError = document.getElementById('form-error');
-            formError.style.display = 'none';
-
-            if (!auth || !auth.currentUser) {
-                formError.textContent = "Koneksi belum siap. Silakan coba simpan lagi sesaat.";
-                formError.style.display = 'block';
-                return;
-            }
-            const currentUser = auth.currentUser;
 
             const id = document.getElementById('order-id').value;
             const hargaJualKonsumen = parseFloat(document.getElementById('hargaJualKonsumen').value) || 0;
@@ -473,6 +412,7 @@
             const labaBersih = nilaiDiterima - hargaBeliVendor;
 
             const orderData = {
+                id: id || Date.now().toString(),
                 namaBarang: document.getElementById('namaBarang').value,
                 namaPemesan: document.getElementById('namaPemesan').value,
                 tempatBeli: document.getElementById('tempatBeli').value,
@@ -491,19 +431,19 @@
                 catatan: document.getElementById('catatan').value || null,
             };
 
-            try {
-                const userOrdersCollection = collection(db, `artifacts/${appId}/users/${currentUser.uid}/orders`);
-                if (id) {
-                    const orderDocRef = doc(userOrdersCollection, id);
-                    await updateDoc(orderDocRef, orderData);
-                } else {
-                    await addDoc(userOrdersCollection, orderData);
+            if (id) {
+                const index = allOrders.findIndex(order => order.id === id);
+                if (index > -1) {
+                    allOrders[index] = orderData;
                 }
-                orderForm.reset();
-                showPage('dashboard-page');
-            } catch (error) {
-                console.error("Error saving order:", error);
+            } else {
+                allOrders.push(orderData);
             }
+            
+            saveOrdersToLocal();
+            loadOrdersFromLocal();
+            orderForm.reset();
+            showPage('dashboard-page');
         });
 
         function handleEditOrder(id) {
@@ -589,27 +529,14 @@
             orderIdToDelete = null;
         });
 
-        document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-            const deleteError = document.getElementById('delete-error');
-            deleteError.style.display = 'none';
-
-            if (!auth.currentUser) {
-                deleteError.textContent = "Koneksi belum siap. Coba lagi.";
-                deleteError.style.display = 'block';
-                return;
-            }
-            const currentUser = auth.currentUser;
-
-            if (orderIdToDelete && currentUser) {
-                try {
-                    const orderDocRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/orders`, orderIdToDelete);
-                    await deleteDoc(orderDocRef);
-                    deleteModal.style.display = 'none';
-                    orderIdToDelete = null;
-                    showPage('dashboard-page');
-                } catch (error) {
-                    console.error("Error deleting order:", error);
-                }
+        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            if (orderIdToDelete) {
+                allOrders = allOrders.filter(order => order.id !== orderIdToDelete);
+                saveOrdersToLocal();
+                loadOrdersFromLocal();
+                deleteModal.style.display = 'none';
+                orderIdToDelete = null;
+                showPage('dashboard-page');
             }
         });
 
@@ -690,7 +617,7 @@
             if (username === localStorage.getItem('username') && password === localStorage.getItem('password')) {
                 sessionStorage.setItem('loggedIn', 'true');
                 showPage('dashboard-page');
-                initializeAppLogic();
+                loadOrdersFromLocal();
             } else {
                 loginError.style.display = 'block';
             }
@@ -753,7 +680,7 @@
 
             if (sessionStorage.getItem('loggedIn') === 'true') {
                 showPage('dashboard-page');
-                initializeAppLogic();
+                loadOrdersFromLocal();
             } else {
                 showPage('login-page');
             }
