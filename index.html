@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catatan Pesananku</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .status-Dipesan { background-color: #4f46e5; color: white; } /* Indigo */
+        .status-Dikirim { background-color: #db2777; color: white; } /* Pink */
+        .status-Tiba { background-color: #16a34a; color: white; } /* Green */
+        .status-Direncanakan { background-color: #ca8a04; color: white; } /* Amber */
+        .status-Dibatalkan { background-color: #64748b; color: white; } /* Slate */
+
+        .btn-gradient {
+            background-image: linear-gradient(to right, #4f46e5, #7c3aed);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            box-shadow: 0 4px 15px 0 rgba(79, 70, 229, 0.4);
+        }
+        .input-styled {
+            background-color: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+        }
+        .input-styled:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="app" class="max-w-2xl mx-auto p-4 md:p-6">
+
+        <!-- ===== Halaman Login ===== -->
+        <div id="login-page" class="page">
+             <div class="flex flex-col items-center justify-center min-h-screen">
+                <div class="w-full max-w-sm">
+                    <div class="text-center mb-8">
+                         <img id="loginLogo" src="https://placehold.co/80x80/e2e8f0/e2e8f0?text=%20" alt="Logo" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md mx-auto">
+                        <h1 class="text-3xl font-bold text-slate-900 mt-4">Selamat Datang</h1>
+                        <p id="loginShopName" class="text-slate-500 mt-1">Silakan masuk untuk melanjutkan</p>
+                    </div>
+                    <form id="login-form" class="bg-white p-8 rounded-xl shadow-lg space-y-6">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-slate-600">Username</label>
+                            <input type="text" id="username" required class="input-styled mt-1 block w-full">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-slate-600">Password</label>
+                            <input type="password" id="password" required class="input-styled mt-1 block w-full">
+                        </div>
+                        <p id="login-error" class="text-red-500 text-sm text-center" style="display: none;">Username atau password salah.</p>
+                        <button type="submit" class="w-full py-3 text-white rounded-lg font-semibold btn-gradient">Masuk</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Halaman Dashboard (Utama) ===== -->
+        <div id="dashboard-page" class="page">
+            <header class="mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="relative w-16 h-16">
+                        <label for="logoUpload" class="cursor-pointer group">
+                            <img id="logoPreview" src="https://placehold.co/64x64/e2e8f0/e2e8f0?text=%20" alt="Logo" class="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md group-hover:opacity-80 transition">
+                        </label>
+                        <input type="file" id="logoUpload" class="hidden" accept="image/*">
+                    </div>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Catatan Pesananku</h1>
+                        <input type="text" id="shopNameInput" class="text-slate-500 bg-transparent focus:bg-white focus:ring-1 focus:ring-indigo-500 rounded px-2 py-0 w-full mt-1 transition" value="Toko Amel Studio Creative">
+                    </div>
+                </div>
+                 <div class="mt-4 flex justify-end gap-4">
+                    <button id="settings-btn" class="text-sm text-slate-600 font-semibold hover:text-indigo-600 transition">Pengaturan</button>
+                    <button id="logout-btn" class="text-sm text-red-500 font-semibold hover:text-red-700 transition">Keluar</button>
+                </div>
+            </header>
+
+            <div class="mb-6">
+                <input type="text" id="searchInputDashboard" placeholder="Cari pesanan..." class="input-styled w-full">
+            </div>
+
+            <div class="space-y-4">
+                <h2 class="text-lg sm:text-xl font-semibold text-slate-800 border-b border-slate-200 pb-2">Pesanan Aktif</h2>
+                <div id="active-orders-list" class="space-y-3">
+                    <p id="loading-active" class="text-slate-500 text-center py-4">Memuat pesanan...</p>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <button id="view-all-orders-btn" class="text-indigo-600 font-semibold hover:underline">Lihat Semua Pesanan &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ===== Halaman Semua Pesanan ===== -->
+        <div id="all-orders-page" class="page">
+            <header class="mb-6 flex items-center justify-between">
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Semua Pesanan</h1>
+                <button id="back-to-dashboard-btn" class="text-indigo-600 font-semibold hover:underline">&larr; Kembali</button>
+            </header>
+
+            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                <input type="text" id="searchInputAll" placeholder="Cari pesanan..." class="input-styled w-full">
+                <select id="filterStatus" class="input-styled w-full sm:w-48">
+                    <option value="Semua">Semua Status</option>
+                    <option value="Direncanakan">Direncanakan</option>
+                    <option value="Dipesan">Dipesan</option>
+                    <option value="Dikirim">Dikirim</option>
+                    <option value="Tiba">Tiba / Selesai</option>
+                    <option value="Dibatalkan">Dibatalkan</option>
+                </select>
+            </div>
+
+            <div id="all-orders-list" class="space-y-3">
+                 <p id="loading-all" class="text-slate-500 text-center py-4">Memuat pesanan...</p>
+            </div>
+        </div>
+
+        <!-- ===== Halaman Form Tambah/Edit Pesanan ===== -->
+        <div id="form-page" class="page">
+            <header class="mb-6 flex items-center justify-between">
+                <h1 id="form-title" class="text-2xl sm:text-3xl font-bold text-slate-900">Tambah Pesanan Baru</h1>
+            </header>
+
+            <form id="order-form" class="space-y-6">
+                <input type="hidden" id="order-id">
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                    <h3 class="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3 mb-4">Detail Pesanan</h3>
+                    <div>
+                        <label for="namaBarang" class="block text-sm font-medium text-slate-600">Nama Barang/Jasa*</label>
+                        <input type="text" id="namaBarang" required class="input-styled mt-1 block w-full">
+                    </div>
+                    <div>
+                        <label for="namaPemesan" class="block text-sm font-medium text-slate-600">Nama Pemesan*</label>
+                        <input type="text" id="namaPemesan" required class="input-styled mt-1 block w-full">
+                    </div>
+                    <div>
+                        <label for="tempatBeli" class="block text-sm font-medium text-slate-600">Tempat Beli/Vendor*</label>
+                        <input type="text" id="tempatBeli" required class="input-styled mt-1 block w-full">
+                    </div>
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-slate-600">Status*</label>
+                        <select id="status" required class="input-styled mt-1 block w-full">
+                            <option value="Direncanakan">Direncanakan</option>
+                            <option value="Dipesan" selected>Dipesan</option>
+                            <option value="Dikirim">Dikirim</option>
+                            <option value="Tiba">Tiba / Selesai</option>
+                            <option value="Dibatalkan">Dibatalkan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                    <h3 class="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3 mb-4">Harga & Simulasi Penjualan</h3>
+                    <div>
+                        <label for="hargaJualKonsumen" class="block text-sm font-medium text-slate-600">Harga Jual Konsumen (Rp)</label>
+                        <input type="number" id="hargaJualKonsumen" min="0" class="input-styled mt-1 block w-full">
+                    </div>
+                    <div class="mt-4 p-4 bg-slate-100 rounded-lg space-y-2">
+                        <h4 class="font-semibold text-slate-700">Rincian Perhitungan Otomatis</h4>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">Harga Dasar:</span><span id="displayHargaDasar" class="font-medium text-slate-800">Rp 0</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">DPP Nilai Lain:</span><span id="displayDPPNilaiLain" class="font-medium text-slate-800">Rp 0</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">PPN (12%):</span><span id="displayPPN" class="font-medium text-slate-800">Rp 0</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-slate-500">PPh 22 (0,5%):</span><span id="displayPPh22" class="font-medium text-slate-800">Rp 0</span></div>
+                        <hr class="my-2 border-slate-200">
+                        <div class="flex justify-between text-base font-bold"><span class="text-slate-800">Nilai Diterima:</span><span id="displayNilaiDiterima" class="text-slate-900">Rp 0</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                    <h3 class="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3 mb-4">Perhitungan Laba Bersih</h3>
+                    <div>
+                        <label for="hargaBeliVendor" class="block text-sm font-medium text-slate-600">Harga Beli di Vendor (Rp)</label>
+                        <input type="number" id="hargaBeliVendor" min="0" class="input-styled mt-1 block w-full">
+                    </div>
+                    <div class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex justify-between text-base font-bold"><span class="text-green-800">Laba Bersih:</span><span id="displayLabaBersih" class="text-green-800">Rp 0</span></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                     <h3 class="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3 mb-4">Detail Lainnya (Opsional)</h3>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="tanggalPesan" class="block text-sm font-medium text-slate-600">Tanggal Pesan</label>
+                            <input type="date" id="tanggalPesan" class="input-styled mt-1 block w-full">
+                        </div>
+                        <div>
+                            <label for="perkiraanTiba" class="block text-sm font-medium text-slate-600">Perkiraan Tiba</label>
+                            <input type="date" id="perkiraanTiba" class="input-styled mt-1 block w-full">
+                        </div>
+                    </div>
+                     <div>
+                        <label for="nomorResi" class="block text-sm font-medium text-slate-600">Nomor Resi</label>
+                        <input type="text" id="nomorResi" class="input-styled mt-1 block w-full">
+                    </div>
+                     <div>
+                        <label for="catatan" class="block text-sm font-medium text-slate-600">Catatan Tambahan</label>
+                        <textarea id="catatan" rows="3" class="input-styled mt-1 block w-full"></textarea>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-4">
+                    <button type="button" id="cancel-form-btn" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 font-semibold transition">Batal</button>
+                    <button type="submit" class="px-8 py-2 text-white rounded-lg font-semibold btn-gradient">Simpan</button>
+                </div>
+                 <div id="delete-order-container" class="pt-4 text-center" style="display: none;">
+                    <button type="button" id="delete-order-btn" class="text-red-600 hover:underline">Hapus Pesanan Ini</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ===== Halaman Pengaturan ===== -->
+        <div id="settings-page" class="page">
+            <header class="mb-6 flex items-center justify-between">
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Pengaturan</h1>
+                <button id="back-to-dashboard-from-settings-btn" class="text-indigo-600 font-semibold hover:underline">&larr; Kembali</button>
+            </header>
+            <div class="bg-white p-6 rounded-lg shadow-sm space-y-6">
+                <form id="settings-form" class="space-y-4">
+                    <div>
+                        <label for="newUsername" class="block text-sm font-medium text-slate-600">Username Baru</label>
+                        <input type="text" id="newUsername" required class="input-styled mt-1 block w-full">
+                    </div>
+                    <div>
+                        <label for="newPassword" class="block text-sm font-medium text-slate-600">Password Baru</label>
+                        <input type="password" id="newPassword" required class="input-styled mt-1 block w-full">
+                    </div>
+                     <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-slate-600">Konfirmasi Password Baru</label>
+                        <input type="password" id="confirmPassword" required class="input-styled mt-1 block w-full">
+                    </div>
+                    <p id="settings-error" class="text-red-500 text-sm" style="display: none;"></p>
+                    <p id="settings-success" class="text-green-500 text-sm" style="display: none;">Pengaturan berhasil disimpan!</p>
+                    <div class="pt-2">
+                         <button type="submit" class="w-full py-3 text-white rounded-lg font-semibold btn-gradient">Simpan Pengaturan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Tombol Tambah Pesanan (Floating) -->
+        <button id="add-order-fab" class="fixed bottom-6 right-6 w-16 h-16 rounded-full flex items-center justify-center shadow-lg text-white btn-gradient transform hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+        </button>
+
+        <!-- Modal Konfirmasi Hapus -->
+        <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="display: none;">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                <h3 class="text-lg font-bold">Hapus Pesanan?</h3>
+                <p class="text-slate-600 my-4">Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat diurungkan.</p>
+                <div class="flex justify-end gap-4">
+                    <button id="cancel-delete-btn" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Batal</button>
+                    <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Hapus</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Import fungsi-fungsi yang diperlukan dari Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ===== Konfigurasi dan Inisialisasi Firebase =====
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-orderly-app';
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let userId = null;
+        let ordersCollectionRef = null;
+        let unsubscribe = null; // Untuk listener onSnapshot
+        let allOrders = []; // Cache lokal untuk semua pesanan
+
+        // ===== Autentikasi Pengguna Firebase =====
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("User is signed in with uid:", user.uid);
+                userId = user.uid;
+                ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                listenToOrders();
+            } else {
+                console.log("User is signed out.");
+                userId = null;
+                if (unsubscribe) unsubscribe();
+            }
+        });
+
+        async function authenticateUser() {
+            try {
+                if (auth.currentUser) return; // Already signed in
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+            }
+        }
+
+        // ===== Manajemen Tampilan (Navigasi Halaman) =====
+        const pages = document.querySelectorAll('.page');
+        const fab = document.getElementById('add-order-fab');
+
+        function showPage(pageId) {
+            pages.forEach(page => {
+                page.classList.toggle('active', page.id === pageId);
+            });
+            const isAppPage = pageId.includes('dashboard') || pageId.includes('all-orders') || pageId.includes('form');
+            fab.style.display = (isAppPage && pageId !== 'form-page') ? 'flex' : 'none';
+        }
+
+        // ===== Logika Render Tampilan =====
+        function renderOrders(orders) {
+            allOrders = orders;
+            
+            const activeOrdersList = document.getElementById('active-orders-list');
+            const allOrdersList = document.getElementById('all-orders-list');
+            const loadingActive = document.getElementById('loading-active');
+            const loadingAll = document.getElementById('loading-all');
+            
+            activeOrdersList.innerHTML = '';
+            allOrdersList.innerHTML = '';
+
+            const activeOrders = orders.filter(order => order.status === 'Dipesan' || order.status === 'Dikirim');
+            
+            if (activeOrders.length === 0) {
+                activeOrdersList.innerHTML = '<p class="text-slate-500 text-center py-4">Tidak ada pesanan aktif saat ini.</p>';
+            } else {
+                activeOrders.forEach(order => activeOrdersList.appendChild(createOrderElement(order)));
+            }
+
+            const searchTerm = document.getElementById('searchInputAll').value.toLowerCase();
+            const filterStatus = document.getElementById('filterStatus').value;
+
+            const filteredOrders = orders.filter(order => {
+                const matchesSearch = order.namaBarang.toLowerCase().includes(searchTerm) || 
+                                      order.tempatBeli.toLowerCase().includes(searchTerm) ||
+                                      (order.namaPemesan && order.namaPemesan.toLowerCase().includes(searchTerm));
+                const matchesStatus = filterStatus === 'Semua' || order.status === filterStatus;
+                return matchesSearch && matchesStatus;
+            });
+
+            if (filteredOrders.length === 0) {
+                allOrdersList.innerHTML = '<p class="text-slate-500 text-center py-4">Tidak ada pesanan yang cocok.</p>';
+            } else {
+                filteredOrders.forEach(order => allOrdersList.appendChild(createOrderElement(order)));
+            }
+            
+            if (loadingActive) loadingActive.style.display = 'none';
+            if (loadingAll) loadingAll.style.display = 'none';
+        }
+        
+        function createOrderElement(order) {
+            const div = document.createElement('div');
+            div.className = 'bg-white p-4 rounded-xl shadow-md border border-slate-100 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all';
+            div.dataset.id = order.id;
+
+            const perkiraanTibaText = order.perkiraanTiba ? `<p class="text-xs text-slate-500">Perkiraan tiba: ${formatDate(order.perkiraanTiba)}</p>` : '';
+            const hargaJualKonsumen = order.hargaJualKonsumen || 0;
+            const labaBersih = order.labaBersih;
+
+            const labaBersihText = (typeof labaBersih === 'number') ? formatCurrency(labaBersih) : 'Rp 0';
+            const labaBersihIsNegative = (typeof labaBersih === 'number') && labaBersih < 0;
+
+            div.innerHTML = `
+                <div class="flex justify-between items-start gap-3">
+                    <div class="flex-grow">
+                        <h3 class="font-semibold text-base sm:text-lg text-slate-800">${order.namaBarang}</h3>
+                        <p class="text-sm font-medium text-indigo-600">${order.namaPemesan || ''}</p>
+                        <p class="text-xs text-slate-500 mt-1">${order.tempatBeli}</p>
+                    </div>
+                    <span class="status-badge status-${order.status.replace(' / ', '')}">${order.status}</span>
+                </div>
+                <div class="mt-2 flex justify-between items-center text-xs text-slate-500">
+                    <p>Dipesan: ${formatDate(order.tanggalPesan)}</p>
+                    ${perkiraanTibaText}
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
+                    <div>
+                        <span class="text-xs text-slate-500 block">Jual Konsumen</span>
+                        <span class="font-semibold text-slate-700">${formatCurrency(hargaJualKonsumen)}</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">Laba Bersih</span>
+                        <span class="font-semibold ${labaBersihIsNegative ? 'text-red-600' : 'text-green-600'}">${labaBersihText}</span>
+                    </div>
+                </div>
+            `;
+            div.addEventListener('click', () => handleEditOrder(order.id));
+            return div;
+        }
+
+        // ===== Listener Firestore Real-time =====
+        function listenToOrders() {
+            if (unsubscribe) unsubscribe();
+            if (!ordersCollectionRef) return;
+
+            unsubscribe = onSnapshot(ordersCollectionRef, (snapshot) => {
+                const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                orders.sort((a, b) => new Date(b.tanggalPesan) - new Date(a.tanggalPesan));
+                renderOrders(orders);
+            }, (error) => {
+                console.error("Error listening to orders:", error);
+            });
+        }
+
+        // ===== Operasi CRUD (Create, Read, Update, Delete) =====
+        const orderForm = document.getElementById('order-form');
+        orderForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!userId) {
+                console.error("User not authenticated, cannot save order.");
+                return;
+            }
+
+            const id = document.getElementById('order-id').value;
+            const hargaJualKonsumen = parseFloat(document.getElementById('hargaJualKonsumen').value) || 0;
+            const hargaBeliVendor = parseFloat(document.getElementById('hargaBeliVendor').value) || 0;
+            
+            const hargaDasar = hargaJualKonsumen / 1.11;
+            const ppn = hargaJualKonsumen - hargaDasar;
+            const dppNilaiLain = ppn / 0.12;
+            const pph22 = hargaDasar * 0.005;
+            const nilaiDiterima = hargaDasar - pph22;
+            const labaBersih = nilaiDiterima - hargaBeliVendor;
+
+            const orderData = {
+                namaBarang: document.getElementById('namaBarang').value,
+                namaPemesan: document.getElementById('namaPemesan').value,
+                tempatBeli: document.getElementById('tempatBeli').value,
+                status: document.getElementById('status').value,
+                hargaJualKonsumen: hargaJualKonsumen || null,
+                hargaDasar: hargaDasar || null,
+                dppNilaiLain: dppNilaiLain || null,
+                ppn: ppn || null,
+                pph22: pph22 || null,
+                nilaiDiterima: nilaiDiterima || null,
+                hargaBeliVendor: hargaBeliVendor || null,
+                labaBersih: labaBersih,
+                tanggalPesan: document.getElementById('tanggalPesan').value || new Date().toISOString().split('T')[0],
+                perkiraanTiba: document.getElementById('perkiraanTiba').value || null,
+                nomorResi: document.getElementById('nomorResi').value || null,
+                catatan: document.getElementById('catatan').value || null,
+            };
+
+            try {
+                if (id) {
+                    const orderDocRef = doc(db, `artifacts/${appId}/users/${userId}/orders`, id);
+                    await updateDoc(orderDocRef, orderData);
+                } else {
+                    await addDoc(ordersCollectionRef, orderData);
+                }
+                orderForm.reset();
+                showPage('dashboard-page');
+            } catch (error) {
+                console.error("Error saving order:", error);
+            }
+        });
+
+        function handleEditOrder(id) {
+            const order = allOrders.find(o => o.id === id);
+            if (!order) return;
+
+            document.getElementById('form-title').innerText = 'Edit Pesanan';
+            document.getElementById('order-id').value = order.id;
+            document.getElementById('namaBarang').value = order.namaBarang;
+            document.getElementById('namaPemesan').value = order.namaPemesan;
+            document.getElementById('tempatBeli').value = order.tempatBeli;
+            document.getElementById('status').value = order.status;
+            document.getElementById('hargaJualKonsumen').value = order.hargaJualKonsumen;
+            document.getElementById('hargaBeliVendor').value = order.hargaBeliVendor;
+            document.getElementById('tanggalPesan').value = order.tanggalPesan;
+            document.getElementById('perkiraanTiba').value = order.perkiraanTiba;
+            document.getElementById('nomorResi').value = order.nomorResi;
+            document.getElementById('catatan').value = order.catatan;
+            
+            updateCalculations();
+            document.getElementById('delete-order-container').style.display = 'block';
+            showPage('form-page');
+        }
+
+        // ===== Event Listeners untuk Navigasi dan Aksi =====
+        document.getElementById('add-order-fab').addEventListener('click', () => {
+            document.getElementById('form-title').innerText = 'Tambah Pesanan Baru';
+            orderForm.reset();
+            document.getElementById('order-id').value = '';
+            document.getElementById('tanggalPesan').value = new Date().toISOString().split('T')[0];
+            updateCalculations();
+            document.getElementById('delete-order-container').style.display = 'none';
+            showPage('form-page');
+        });
+
+        document.getElementById('cancel-form-btn').addEventListener('click', () => {
+            showPage('dashboard-page');
+        });
+
+        document.getElementById('view-all-orders-btn').addEventListener('click', () => {
+            showPage('all-orders-page');
+        });
+        
+        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => {
+            showPage('dashboard-page');
+        });
+
+        // Pencarian dan Filter
+        document.getElementById('searchInputDashboard').addEventListener('input', (e) => {
+             const searchTerm = e.target.value.toLowerCase();
+             const activeOrders = allOrders.filter(order => order.status === 'Dipesan' || order.status === 'Dikirim');
+             const filtered = activeOrders.filter(order => 
+                order.namaBarang.toLowerCase().includes(searchTerm) || 
+                order.tempatBeli.toLowerCase().includes(searchTerm) ||
+                (order.namaPemesan && order.namaPemesan.toLowerCase().includes(searchTerm))
+             );
+             
+             const listEl = document.getElementById('active-orders-list');
+             listEl.innerHTML = '';
+             if (filtered.length === 0) {
+                 listEl.innerHTML = '<p class="text-slate-500 text-center py-4">Tidak ada pesanan yang cocok.</p>';
+             } else {
+                 filtered.forEach(order => listEl.appendChild(createOrderElement(order)));
+             }
+        });
+        
+        document.getElementById('searchInputAll').addEventListener('input', () => renderOrders(allOrders));
+        document.getElementById('filterStatus').addEventListener('change', () => renderOrders(allOrders));
+
+        // Logika Hapus Pesanan dengan Modal
+        const deleteModal = document.getElementById('delete-modal');
+        let orderIdToDelete = null;
+
+        document.getElementById('delete-order-btn').addEventListener('click', () => {
+            orderIdToDelete = document.getElementById('order-id').value;
+            if (orderIdToDelete) {
+                deleteModal.style.display = 'flex';
+            }
+        });
+
+        document.getElementById('cancel-delete-btn').addEventListener('click', () => {
+            deleteModal.style.display = 'none';
+            orderIdToDelete = null;
+        });
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+            if (orderIdToDelete && userId) {
+                try {
+                    const orderDocRef = doc(db, `artifacts/${appId}/users/${userId}/orders`, orderIdToDelete);
+                    await deleteDoc(orderDocRef);
+                    deleteModal.style.display = 'none';
+                    orderIdToDelete = null;
+                    showPage('dashboard-page');
+                } catch (error) {
+                    console.error("Error deleting order:", error);
+                }
+            }
+        });
+
+        // ===== Fungsi Perhitungan Otomatis =====
+        const hargaJualKonsumenInput = document.getElementById('hargaJualKonsumen');
+        const hargaBeliVendorInput = document.getElementById('hargaBeliVendor');
+
+        function updateCalculations() {
+            const hargaJualKonsumen = parseFloat(hargaJualKonsumenInput.value) || 0;
+            const hargaBeliVendor = parseFloat(hargaBeliVendorInput.value) || 0;
+
+            const hargaDasar = hargaJualKonsumen / 1.11;
+            const ppn = hargaJualKonsumen - hargaDasar;
+            const dppNilaiLain = ppn / 0.12;
+            const pph22 = hargaDasar * 0.005;
+            const nilaiDiterima = hargaDasar - pph22;
+            const labaBersih = nilaiDiterima - hargaBeliVendor;
+
+            document.getElementById('displayHargaDasar').textContent = formatCurrency(hargaDasar);
+            document.getElementById('displayDPPNilaiLain').textContent = formatCurrency(dppNilaiLain);
+            document.getElementById('displayPPN').textContent = formatCurrency(ppn);
+            document.getElementById('displayPPh22').textContent = formatCurrency(pph22);
+            document.getElementById('displayNilaiDiterima').textContent = formatCurrency(nilaiDiterima);
+            
+            const displayLabaBersih = document.getElementById('displayLabaBersih');
+            displayLabaBersih.textContent = formatCurrency(labaBersih);
+            displayLabaBersih.classList.toggle('text-red-600', labaBersih < 0);
+            displayLabaBersih.classList.toggle('text-green-700', labaBersih >= 0);
+        }
+
+        hargaJualKonsumenInput.addEventListener('input', updateCalculations);
+        hargaBeliVendorInput.addEventListener('input', updateCalculations);
+
+        // ===== Fungsi Upload dan Simpan/Muat Logo & Nama Toko =====
+        const logoUpload = document.getElementById('logoUpload');
+        const logoPreview = document.getElementById('logoPreview');
+        const shopNameInput = document.getElementById('shopNameInput');
+
+        logoUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageDataUrl = e.target.result;
+                    logoPreview.src = imageDataUrl;
+                    localStorage.setItem('userLogo', imageDataUrl);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        shopNameInput.addEventListener('input', () => {
+            localStorage.setItem('shopName', shopNameInput.value);
+        });
+
+        // ===== Logika Login & Pengaturan =====
+        const loginForm = document.getElementById('login-form');
+        const settingsForm = document.getElementById('settings-form');
+        const logoutBtn = document.getElementById('logout-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const backFromSettingsBtn = document.getElementById('back-to-dashboard-from-settings-btn');
+
+        function initializeCredentials() {
+            if (!localStorage.getItem('username')) {
+                localStorage.setItem('username', 'admin');
+            }
+            if (!localStorage.getItem('password')) {
+                localStorage.setItem('password', '123');
+            }
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginError = document.getElementById('login-error');
+
+            if (username === localStorage.getItem('username') && password === localStorage.getItem('password')) {
+                sessionStorage.setItem('loggedIn', 'true');
+                showPage('dashboard-page');
+                authenticateUser();
+            } else {
+                loginError.style.display = 'block';
+            }
+        });
+        
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('loggedIn');
+            window.location.reload();
+        });
+
+        settingsBtn.addEventListener('click', () => {
+            document.getElementById('newUsername').value = localStorage.getItem('username');
+            document.getElementById('settings-error').style.display = 'none';
+            document.getElementById('settings-success').style.display = 'none';
+            showPage('settings-page');
+        });
+
+        backFromSettingsBtn.addEventListener('click', () => {
+            showPage('dashboard-page');
+        });
+
+        settingsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newUsername = document.getElementById('newUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const settingsError = document.getElementById('settings-error');
+            const settingsSuccess = document.getElementById('settings-success');
+
+            if (newPassword !== confirmPassword) {
+                settingsError.textContent = 'Konfirmasi password tidak cocok.';
+                settingsError.style.display = 'block';
+                settingsSuccess.style.display = 'none';
+                return;
+            }
+
+            localStorage.setItem('username', newUsername);
+            localStorage.setItem('password', newPassword);
+            
+            settingsError.style.display = 'none';
+            settingsSuccess.style.display = 'block';
+            settingsForm.reset();
+             document.getElementById('newUsername').value = newUsername;
+        });
+
+
+        // ===== Inisialisasi Aplikasi saat DOM dimuat =====
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCredentials();
+            const savedLogo = localStorage.getItem('userLogo');
+            const savedShopName = localStorage.getItem('shopName') || 'Toko Amel Studio Creative';
+            
+            if (savedLogo) {
+                logoPreview.src = savedLogo;
+                document.getElementById('loginLogo').src = savedLogo;
+            }
+            shopNameInput.value = savedShopName;
+            document.getElementById('loginShopName').textContent = savedShopName;
+
+
+            if (sessionStorage.getItem('loggedIn') === 'true') {
+                showPage('dashboard-page');
+                authenticateUser();
+            } else {
+                showPage('login-page');
+            }
+        });
+
+
+        // ===== Fungsi Helper =====
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+            const correctedDate = new Date(date.getTime() + userTimezoneOffset);
+            return correctedDate.toLocaleDateString('id-ID', {
+                day: 'numeric', month: 'short', year: 'numeric'
+            });
+        }
+
+        function formatCurrency(number) {
+            if (number === null || isNaN(number)) {
+                return 'Rp 0';
+            }
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number);
+        }
+        
+    </script>
+</body>
+</html>
