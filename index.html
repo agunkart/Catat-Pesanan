@@ -449,8 +449,11 @@
         const orderForm = document.getElementById('order-form');
         orderForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!userId) {
-                console.error("User not authenticated, cannot save order.");
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                alert("Sesi Anda telah berakhir. Silakan login kembali.");
+                sessionStorage.removeItem('loggedIn');
+                window.location.reload();
                 return;
             }
 
@@ -485,11 +488,12 @@
             };
 
             try {
+                const userOrdersCollection = collection(db, `artifacts/${appId}/users/${currentUser.uid}/orders`);
                 if (id) {
-                    const orderDocRef = doc(db, `artifacts/${appId}/users/${userId}/orders`, id);
+                    const orderDocRef = doc(userOrdersCollection, id);
                     await updateDoc(orderDocRef, orderData);
                 } else {
-                    await addDoc(ordersCollectionRef, orderData);
+                    await addDoc(userOrdersCollection, orderData);
                 }
                 orderForm.reset();
                 showPage('dashboard-page');
@@ -582,9 +586,10 @@
         });
 
         document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-            if (orderIdToDelete && userId) {
+            const currentUser = auth.currentUser;
+            if (orderIdToDelete && currentUser) {
                 try {
-                    const orderDocRef = doc(db, `artifacts/${appId}/users/${userId}/orders`, orderIdToDelete);
+                    const orderDocRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/orders`, orderIdToDelete);
                     await deleteDoc(orderDocRef);
                     deleteModal.style.display = 'none';
                     orderIdToDelete = null;
@@ -672,7 +677,7 @@
             if (username === localStorage.getItem('username') && password === localStorage.getItem('password')) {
                 sessionStorage.setItem('loggedIn', 'true');
                 showPage('dashboard-page');
-                authenticateUser();
+                initializeAppLogic();
             } else {
                 loginError.style.display = 'block';
             }
