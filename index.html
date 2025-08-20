@@ -297,32 +297,37 @@
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-orderly-app';
         
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
+        let app, auth, db;
         let userId = null;
         let ordersCollectionRef = null;
-        let unsubscribe = null; // Untuk listener onSnapshot
-        let allOrders = []; // Cache lokal untuk semua pesanan
+        let unsubscribe = null;
+        let allOrders = [];
 
-        // ===== Autentikasi Pengguna Firebase =====
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log("User is signed in with uid:", user.uid);
-                userId = user.uid;
-                ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
-                listenToOrders();
-            } else {
-                console.log("User is signed out.");
-                userId = null;
-                if (unsubscribe) unsubscribe();
+        function initializeAppLogic() {
+            if (!app) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        console.log("User is signed in with uid:", user.uid);
+                        userId = user.uid;
+                        ordersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/orders`);
+                        listenToOrders();
+                    } else {
+                        console.log("User is signed out.");
+                        userId = null;
+                        if (unsubscribe) unsubscribe();
+                    }
+                });
             }
-        });
+            authenticateUser();
+        }
 
         async function authenticateUser() {
             try {
-                if (auth.currentUser) return; // Already signed in
+                if (auth.currentUser) return;
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -730,7 +735,7 @@
 
             if (sessionStorage.getItem('loggedIn') === 'true') {
                 showPage('dashboard-page');
-                authenticateUser();
+                initializeAppLogic();
             } else {
                 showPage('login-page');
             }
